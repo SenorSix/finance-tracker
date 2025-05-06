@@ -63,7 +63,7 @@ df["Cleaned_Description_1"] = df["Cleaned_Description"].map(name_map).fillna(df[
 df["Cleaned_Description_1"] = df.apply(resolve_edge_case, axis=1)
 
 # Create a new CSV with only the cleaned descriptions
-output_path = "/home/mr6/Desktop/1/Money/Finance/Tracker/cleaned_descriptions.csv"
+output_path = "/home/mr6/Desktop/1/Money/Finance/Tracker/Excel/cleaned_descriptions.csv"
 df[["Date", "Description", "Cleaned_Description", "Cleaned_Description_1", "Amount", "Balance"]].to_csv(output_path, index=False)
 
 print(f"✅ Cleaned descriptions saved to {output_path}!")
