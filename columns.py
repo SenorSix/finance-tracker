@@ -3,7 +3,8 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Border, Side
 
 # Load your cleaned data
-df = pd.read_csv("/home/mr6/Desktop/1/Money/Finance/Tracker/Excel/cleaned_descriptions.csv")
+file_path = "excel/cleaned_descriptions.csv"
+df = pd.read_csv(file_path)
 
 # Convert date column
 df["Date"] = pd.to_datetime(df["Date"])
@@ -35,12 +36,14 @@ pivot_df["index"] = pivot_df["index"].dt.strftime("%-m-%-d-%Y")  # Use %#m/%#d o
 pivot_df.rename(columns={"index": "Date"}, inplace=True)
 
 # Add totals row at the bottom
-totals = pivot_df.iloc[:, 1:].replace("", 0).astype(float).sum()
+totals = pivot_df.iloc[:, 1:].replace("", 0).apply(pd.to_numeric, errors="coerce").fillna(0).sum()
+# TODO: Pandas may change downcasting rules soon — revisit this if it breaks
+
 totals_row = ["Total"] + totals.tolist()
 pivot_df.loc[len(pivot_df)] = totals_row
 
 # Save to Excel
-excel_path = "/home/mr6/Desktop/1/Money/Finance/Tracker/Excel/output_by_date.xlsx"
+excel_path = "excel/output_by_date.xlsx"
 pivot_df.to_excel(excel_path, index=False)
 
 # Auto-adjust column widths

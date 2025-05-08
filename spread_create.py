@@ -2,13 +2,15 @@ import pandas as pd
 import json
 
 # Load bank statement CSV
-file_path = "/home/mr6/Desktop/1/Money/Finance/Tracker/3-22-25.csv"
+file_path = "excel/3-22-25.csv"
 df = pd.read_csv(file_path)
 
 def extract_vendor(description):
-    if "POS PURCHASE" in description:
+    description = description.lower() # Ensures the script works with POS PURCHASE or pos purchase
+
+    if "pos purchase" in description:
         # Find the part after "POS PURCHASE" to copy
-        words = description.split("POS PURCHASE", 1)[1].strip()
+        words = description.split("pos purchase", 1)[1].strip()
 
         # If first character after "POS PURCHASE" is not a letter or space, return "XXXX"
         if words and not words[0].isalpha():
@@ -42,11 +44,11 @@ def extract_vendor(description):
 # Apply the extract_vendor function to the Description column
 df["Cleaned_Description"] = df["Description"].astype(str).apply(extract_vendor)
 
-with open("/home/mr6/Desktop/1/Money/Finance/Tracker/clean_names.json", "r") as f:
+with open("data/clean_names.json", "r") as f:
     name_map = json.load(f)
 
 # Load fallback map for full descriptions
-with open("/home/mr6/Desktop/1/Money/Finance/Tracker/fallback_map.json", "r") as f:
+with open("data/fallback_map.json", "r") as f:
     fallback_map = json.load(f)
 
 def resolve_edge_case(row):
@@ -57,13 +59,14 @@ def resolve_edge_case(row):
                 return fallback_map[key]
     return row["Cleaned_Description_1"]
 
-# Create a new column with the final mapped names
-df["Cleaned_Description_1"] = df["Cleaned_Description"].map(name_map).fillna(df["Cleaned_Description"])
+# First, create the mapped version
+df["Mapped_Name"] = df["Cleaned_Description"].map(name_map).fillna(df["Cleaned_Description"])
 
-df["Cleaned_Description_1"] = df.apply(resolve_edge_case, axis=1)
+# Then apply the fallback logic *after* the mapping
+df["Cleaned_Description_1"] = df.apply(lambda row: resolve_edge_case({"Description": row["Description"], "Cleaned_Description_1": row["Mapped_Name"]}), axis=1)
 
 # Create a new CSV with only the cleaned descriptions
-output_path = "/home/mr6/Desktop/1/Money/Finance/Tracker/Excel/cleaned_descriptions.csv"
+output_path = "excel/cleaned_descriptions.csv"
 df[["Date", "Description", "Cleaned_Description", "Cleaned_Description_1", "Amount", "Balance"]].to_csv(output_path, index=False)
 
 print(f"✅ Cleaned descriptions saved to {output_path}!")
