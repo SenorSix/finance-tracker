@@ -12,12 +12,21 @@ df["Date"] = pd.to_datetime(df["Date"])
 # Clean dollar signs and convert to float
 df[["Amount", "Balance"]] = df[["Amount", "Balance"]].replace('[\$,]', '', regex=True).astype(float)
 
+# This pivot table is for the totals row. pivot_df below is for all the transaction rows enabling multiple vendor transactions in a single day
+totals_pivot_df = df.pivot_table(
+    index="Date",
+    columns="Cleaned_Description_1",
+    values="Amount",
+    aggfunc="sum",
+    fill_value=0
+)
+
 # Create pivot table (Date as index, Vendors as columns, Amounts as values)
 pivot_df = df.pivot_table(
     index="Date",
     columns="Cleaned_Description_1",
     values="Amount",
-    aggfunc="sum",    # Summing in case there are multiple charges per vendor per day
+    aggfunc=lambda x: x.iloc[0] if len(x) == 1 else " + ".join(f"{v:.2f}" for v in x),  # Doesn't sum in order to show multiple purchases from vendor in one day
     fill_value=""
 )
 
@@ -36,7 +45,7 @@ pivot_df["index"] = pivot_df["index"].dt.strftime("%-m-%-d-%Y")  # Use %#m/%#d o
 pivot_df.rename(columns={"index": "Date"}, inplace=True)
 
 # Add totals row at the bottom
-totals = pivot_df.iloc[:, 1:].replace("", 0).apply(pd.to_numeric, errors="coerce").fillna(0).sum()
+totals = totals_pivot_df.sum()
 # TODO: Pandas may change downcasting rules soon — revisit this if it breaks
 
 totals_row = ["Total"] + totals.tolist()
