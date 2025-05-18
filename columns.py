@@ -12,7 +12,7 @@ df["Date"] = pd.to_datetime(df["Date"])
 # Clean dollar signs and convert to float
 df[["Amount", "Balance"]] = df[["Amount", "Balance"]].replace('[\$,]', '', regex=True).astype(float)
 
-# This pivot table is for the totals row. pivot_df below is for all the transaction rows enabling multiple vendor transactions in a single day
+# This pivot table is for the totals row. pivot_df below is for all the transaction rows enabling single and multiple vendor transactions in a single day
 totals_pivot_df = df.pivot_table(
     index="Date",
     columns="Cleaned_Description_1",
@@ -94,3 +94,6 @@ for cell in ws[last_row]:
 wb.save(excel_path)
 
 print("✅ Output with full date range and totals row saved!")
+
+
+
