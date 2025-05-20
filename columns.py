@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Border, Side
 
@@ -94,6 +95,3 @@ for cell in ws[last_row]:
 wb.save(excel_path)
 
 print("✅ Output with full date range and totals row saved!")
-
-
-

@@ -49,25 +49,61 @@ with open("data/fallback_map.json", "r") as f:
 
 # Handle edge cases
 def resolve_edge_case(row):
-    if row["Cleaned_Description_1"] in ["XXXXXXXXXX"]:
+    if row["Mapped_Name"] in ["XXXXXXXXXX"]:
         full_desc = row["Description"].lower()
         for key in fallback_map:
             if key in full_desc:
                 return fallback_map[key]
-    return row["Cleaned_Description_1"]
+    return row["Mapped_Name"]
 
 # Apply mapping and fallback logic
 df["Mapped_Name"] = df["Cleaned_Description"].map(name_map).fillna(df["Cleaned_Description"])
-df["Cleaned_Description_1"] = df.apply(
-    lambda row: resolve_edge_case({
-        "Description": row["Description"],
-        "Cleaned_Description_1": row["Mapped_Name"]
-    }),
-    axis=1
-)
+df["Cleaned_Description_1"] = df.apply(resolve_edge_case, axis=1)
 
-# Save cleaned data as CSV (no formatting)
+
+
+#____________________________________________________________________________________________#
+
+# Separate part of script to create a JSON file categorizing vendors
+
+category_path = "data/category.json"
+
+# Load existing category mapping or start fresh
+try:
+    with open(category_path, 'r') as f:
+        category_map = json.load(f)
+except FileNotFoundError:
+    category_map =  {}
+
+# Get current vendors
+current_vendors = df["Cleaned_Description_1"].dropna().unique()
+
+# Track new vendors added
+new_entries = 0
+
+# Add any new vendors not already in the file
+for vendor in current_vendors:
+    if vendor not in category_map:
+        category_map[vendor] = ""
+        new_entries += 1
+
+# Save updated category map
+with open(category_path, 'w') as f:
+    json.dump(category_map, f, indent=2)
+
 output_path = "excel/cleaned_descriptions.csv"
-df[["Date", "Description", "Cleaned_Description", "Cleaned_Description_1", "Amount", "Balance"]].to_csv(output_path, index=False)
+
+df["Categories"] = df["Cleaned_Description_1"].map(category_map).fillna("")
+
+columns_to_export = ["Date", "Description", "Cleaned_Description", "Cleaned_Description_1", "Categories", "Amount", "Balance"]
+
+df[columns_to_export].to_csv(output_path, index=False)
+
+if new_entries:
+    print(f"🆕🆕🆕🆕🆕🆕🆕🆕🆕🆕🆕 NEW VENDORS. CATEGORIZE")
+else:
+    print("✅ No new vendors found. Category map is up to date")
 
 print(f"✅ Cleaned descriptions saved to {output_path}!")
+
+
